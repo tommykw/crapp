@@ -2,22 +2,43 @@ package main
 
 import (
      "fmt"
-     "net/http"
+     "strings"
+     "time"
+     "github.com/PuerkitoBio/goquery"
 )
 
-type Result struct {
-     Url string
-}
+// google play url
+const APP_STORE_URL = ""
 
-func FetchPage(url string) []Result {
-    res, err := http.Get(url)
-    if err != nil {
-        fmt.Println(err)
-    }
-    defer res.Body.Close()
-    return nil
+func getVersion() string {
+    ver := ""
+    doc, _ := goquery.NewDocument(APP_STORE_URL)
+    doc.Find("div").Each(func(_ int, s *goquery.Selection) {
+        itemprop, _ := s.Attr("itemprop")
+        classname, _ := s.Attr("class")
+        if itemprop == "softwareVersion" && classname == "content" {
+            ver = strings.TrimSpace(s.Text())
+        }
+    })
+
+    return ver
 }
 
 func main() {
-    url := ""
+    ver := getVersion()
+    if ver == "" {
+        fmt.Println("cannot get current version")
+        return
+    }
+    fmt.Printf("current ver %s\n", ver)
+   
+    for { 
+        current_ver := getVersion()
+        if ver != current_ver {
+            fmt.Printf("updated to ver %s\n", current_ver)
+            break
+        }
+        fmt.Printf("current ver %s\n", current_ver)
+        time.Sleep(60 * 1000 * time.Millisecond)
+    }
 }
